@@ -3,7 +3,7 @@
 # Récupération du répertoire d'éxecution du script
 rep_firewall=$(dirname $(readlink -f $0))
 
-# Récupération des information sur les interfaces réseau detecté par le système
+# Récupération des informations sur les interfaces réseau detecté par le système
 for iface in `ls /sys/class/net`
     do
         if [ -d "/sys/class/net/${iface}/device" ]
