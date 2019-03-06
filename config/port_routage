@@ -1,0 +1,4 @@
+# port_routage=( \
+# "désignation|protocol|port|adresse_de_destination|port_de_destination" \
+# "désignation|protocol|port_debut:port_fin|adresse_de_destination|port_de_dest$
+# )
