@@ -50,6 +50,17 @@ echo 1 > /proc/sys/net/ipv4/tcp_timestamps
 echo "#Conntrack Entry Tuning (Calculate your own values ! depending on your hardware)"
 echo 65536 > /proc/sys/net/netfilter/nf_conntrack_max
 
+##Pour permettre à une connexion déjà ouverte de recevoir du trafic
+
+iptables -A INPUT  -i "${red_iface}"    -m state --state ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o "${red_iface}"    -j ACCEPT
+iptables -A INPUT  -i "${green_iface}"  -j ACCEPT
+iptables -A OUTPUT -o "${green_iface}"  -j ACCEPT
+iptables -A INPUT  -i "${orange_iface}" -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT  -i "${orange_iface}" -d "${red_ip}" -j ACCEPT
+iptables -A OUTPUT -o "${orange_iface}" -j ACCEPT
+
+
 ## Autoriser le trafic local
 iptables -A INPUT  -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
@@ -81,21 +92,22 @@ iptables -A FORWARD -o "${green_iface}"  -i "${red_iface}"    -j ACCEPT
 iptables -A FORWARD -o "${green_iface}"  -i "${orange_iface}" -m state --state ESTABLISHED -j ACCEPT
 iptables -A FORWARD -o "${orange_iface}" -i "${green_iface}"  -j ACCEPT
 
+
 ## Mise en place du masquerade
 iptables -t nat -A POSTROUTING -o "${red_iface}" -s "${orange_network}" -j MASQUERADE
 iptables -t nat -A POSTROUTING -o "${red_iface}" -s "${green_network}"  -j MASQUERADE
 
 # Mise en place du routage de port
 for i in "${!port_routage[@]}"
-        do
-        service_name=`echo "${port_routage[$i]}" | cut -d "|" -f1`
-        proto=`echo "${port_routage[$i]}" | cut -d "|" -f2`
-        red_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
-        ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
-        port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
-    echo "${service_name}"      
-    iptables -t nat -A PREROUTING -i "${red_iface}" -p "${proto}" --dport "${red_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
-        done
+	do
+	service_name=`echo "${port_routage[$i]}" | cut -d "|" -f1`
+	proto=`echo "${port_routage[$i]}" | cut -d "|" -f2`
+	red_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
+	ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
+	port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
+        echo "${service_name}"	
+        iptables -t nat -A PREROUTING -i "${red_iface}" -p "${proto}" --dport "${red_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
+	done
 
 ## on bloque tout le reste
 iptables -A INPUT -i "${red_iface}"    -j REJECT
