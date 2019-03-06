@@ -2,7 +2,7 @@
 Scripts Firewall Routeur basé sur iptables
 
 Réalisation d'un parefeu routeur à partir de scripts iptables.
-Compatible avec les distributions linux et indépendant de l'architecture matériel
+Compatible avec les distributions linux Debian et indépendant de l'architecture matériel
 
 Ces scripts on était réalisé grace aux articles suivants:
 
