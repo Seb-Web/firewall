@@ -105,8 +105,9 @@ for i in "${!port_routage[@]}"
 	red_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
 	ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
 	port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
-        echo "${service_name}"	
-        iptables -t nat -A PREROUTING -i "${red_iface}" -p "${proto}" --dport "${red_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
+    echo "${service_name}"
+    echo "iptables -t nat -A PREROUTING -i \"${red_iface}\" -p \"${proto}\" --dport \"${red_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+    iptables -t nat -A PREROUTING -i "${red_iface}" -p "${proto}" --dport "${red_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
 	done
 
 ## on bloque tout le reste
