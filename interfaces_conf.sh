@@ -16,7 +16,7 @@ for iface in `ls /sys/class/net`
     done
 
 # restitution des informations en vue d'un traitement utilisateur
-echo -e "le systme a detecté ${#interface_mac[@]} carte réseau"
+echo -e "le systme a détecté ${#interface_mac[@]} carte réseau"
 
 for i in "${!interface_mac[@]}"
     do
