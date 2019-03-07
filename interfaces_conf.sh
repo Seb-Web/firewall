@@ -20,7 +20,7 @@ for iface in `ls /sys/class/net`
                 then
                 interface_model[${count}]=`echo ${line} | grep -E "ID_MODEL_FROM_DATABASE" | cut -d "=" -f2`
                 fi
-            f [[ $line =~ ^"E: ID_VENDOR_FROM_DATABASE" ]]
+            if [[ $line =~ ^"E: ID_VENDOR_FROM_DATABASE" ]]
                 then
                 interface_vendor[${count}]=`echo ${line} | grep -E "ID_VENDOR_FROM_DATABASE" | cut -d "=" -f2`
                 fi
@@ -68,8 +68,10 @@ while [ ! "${confirmation}" == "oui" ]
     done
 
 # écriture des règles d'attribution de nom pour les interfaces
-echo > config/70-persistant-net.rules
+echo > config/udev/rules.d/70-persistant-net.rules
 for i in "${!interface_mac[@]}"
     do 
-    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${interface_mac[$i]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"${interface_iface[$i]}\"" >> config/70-persistant-net.rules
+    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${interface_mac[$i]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"${interface_iface[$i]}\"" >> config/udev/rules.d/70-persistant-net.rules
+
     done
+ln -s config/udev/rules.d/70-persistant-net.rules /etc/udev/rules.d/70-persistant-net.rules.test
