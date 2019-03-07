@@ -74,4 +74,4 @@ for i in "${!interface_mac[@]}"
     echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${interface_mac[$i]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"${interface_iface[$i]}\"" >> config/udev/rules.d/70-persistant-net.rules
 
     done
-ln -s config/udev/rules.d/70-persistant-net.rules /etc/udev/rules.d/70-persistant-net.rules.test
+ln -s "${rep_firewall}/config/udev/rules.d/70-persistant-net.rules" "/etc/udev/rules.d/70-persistant-net.rules.test"
