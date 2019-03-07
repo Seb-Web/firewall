@@ -63,6 +63,7 @@ iptables -A OUTPUT -o lo -j ACCEPT
 
 ## On autorise les ports necessaires a notre configuration serveur :
 iptables -A INPUT  -i "${red_iface}"    -p tcp --dport 60022 -j ACCEPT
+#iptables -A INPUT  -i "${red_iface}"    -p tcp --dport 60443 -j ACCEPT
 
 ## On autorise les pings entrants sur red
 iptables -A INPUT -i "${red_iface}"    -p icmp -j ACCEPT
@@ -71,7 +72,7 @@ iptables -A OUTPUT -p icmp -j ACCEPT
 
 ## autorisation de forward red<-->orange
 iptables -A FORWARD -o "${red_iface}"    -i "${orange_iface}" -j ACCEPT
-iptables -A FORWARD -o "${orange_iface}" -i "${red_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -o "${orange_iface}" -i "${red_iface}"    -j ACCEPT
 ## autorisation de forward red<-->green
 iptables -A FORWARD -o "${red_iface}"    -i "${green_iface}"  -j ACCEPT
 iptables -A FORWARD -o "${green_iface}"  -i "${red_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
