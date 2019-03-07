@@ -56,8 +56,7 @@ iptables -A INPUT  -i "${red_iface}"    -m state --state ESTABLISHED -j ACCEPT
 iptables -A OUTPUT -o "${red_iface}"    -j ACCEPT
 iptables -A INPUT  -i "${green_iface}"  -j ACCEPT
 iptables -A OUTPUT -o "${green_iface}"  -j ACCEPT
-iptables -A INPUT  -i "${orange_iface}" -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT  -i "${orange_iface}" -d "${red_ip}" -j ACCEPT
+iptables -A INPUT  -i "${orange_iface}" -j ACCEPT
 iptables -A OUTPUT -o "${orange_iface}" -j ACCEPT
 
 
@@ -84,13 +83,14 @@ iptables -A OUTPUT -p icmp -j ACCEPT
 
 ## autorisation de forward red<-->orange
 iptables -A FORWARD -o "${red_iface}"    -i "${orange_iface}" -j ACCEPT
-iptables -A FORWARD -o "${orange_iface}" -i "${red_iface}"    -j ACCEPT
+iptables -A FORWARD -o "${orange_iface}" -i "${red_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
 ## autorisation de forward red<-->green
 iptables -A FORWARD -o "${red_iface}"    -i "${green_iface}"  -j ACCEPT
-iptables -A FORWARD -o "${green_iface}"  -i "${red_iface}"    -j ACCEPT
+iptables -A FORWARD -o "${green_iface}"  -i "${red_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
 ## autorisation de forward green<-->orange
-iptables -A FORWARD -o "${green_iface}"  -i "${orange_iface}" -m state --state ESTABLISHED -j ACCEPT
+iptables -A FORWARD -o "${green_iface}"  -i "${orange_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A FORWARD -o "${orange_iface}" -i "${green_iface}"  -j ACCEPT
+
 
 
 ## Mise en place du masquerade
