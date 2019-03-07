@@ -32,10 +32,12 @@ https://geekeries.org/2017/12/configuration-avancee-du-firewall-iptables/?cn-rel
 
 # Prérequis
 
-Hardware
+-Hardware
+
 le développement est réalisé sur un odroid XU4 équipé de 2 adaptateur usb/lan ASIX Electronics Corp. AX88179 Gigabit Ethernet
 
-Software
+-Software
+
 Ubuntu 18.04.2 LTS (GNU/Linux 4.14.102-156 armv7l) (buster/sid)
 udev 237-3ubuntu10.13
 iptables 1.6.1-2ubuntu2
