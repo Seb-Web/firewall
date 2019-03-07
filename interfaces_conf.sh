@@ -62,12 +62,12 @@ while [ ! "${confirmation}" == "oui" ]
     echo -e "\033[31mRED    = ${interface_mac[${red_choix}]}\033[0m"
     echo -e "\033[32mGREEN  = ${interface_mac[${green_choix}]}\033[0m"
     echo -e "\033[33mORANGE = ${interface_mac[${orange_choix}]}\033[0m"
-
+    echo
     echo "Confirmer (NON/oui) ?"
     read confirmation
     done
 
-
+# écriture des règles d'attribution de nom pour les interfaces
 echo > config/70-persistant-net.rules
 for i in "${!interface_mac[@]}"
     do 
