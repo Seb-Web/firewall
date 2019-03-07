@@ -4,9 +4,6 @@
 rep_firewall=$(dirname $(readlink -f $0))
 
 ##réinitialisation des tables
-iptables -P INPUT   ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT  ACCEPT
 iptables -F
 iptables -X
 iptables -t nat -F
@@ -67,17 +64,8 @@ iptables -A OUTPUT -o lo -j ACCEPT
 ## On autorise les ports necessaires a notre configuration serveur :
 iptables -A INPUT  -i "${red_iface}"    -p tcp --dport 60022 -j ACCEPT
 
-## On autorise les connexion au serveur dns
-iptables -A OUTPUT -o "${red_iface}"    -p udp --dport 53  -j ACCEPT
-iptables -A INPUT  -i "${red_iface}"    -p udp --dport 53  -j ACCEPT
-iptables -A OUTPUT -o "${red_iface}"    -p tcp --dport 53  -j ACCEPT
-iptables -A INPUT  -i "${red_iface}"    -p tcp --dport 53  -j ACCEPT
-
-## On autorise les pings entrants
+## On autorise les pings entrants sur red
 iptables -A INPUT -i "${red_iface}"    -p icmp -j ACCEPT
-iptables -A INPUT -i "${orange_iface}" -p icmp -s "${orange_network}" -d "${orange_network}" -j ACCEPT
-iptables -A INPUT -i "${green_iface}"  -p icmp -s "${green_network}"  -d "${green_network}"  -j ACCEPT
-iptables -A INPUT -i "${green_iface}"  -p icmp -s "${green_network}"  -d "${orange_network}" -j ACCEPT
 
 iptables -A OUTPUT -p icmp -j ACCEPT
 
