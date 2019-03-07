@@ -63,10 +63,10 @@ while [ ! "${confirmation}" == "oui" ]
     done
 
 # écriture des règles d'attribution de nom pour les interfaces
-echo > config/udev/rules.d/75-firewall-persistant-net.rules
+echo > "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules"
 for i in "${!interface_choix[@]}"
     do 
-    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${interface_mac[${interface_choix["$i"]}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"$i\"" >> config/udev/rules.d/75-firewall-persistant-net.rules
+    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${interface_mac[${interface_choix["$i"]}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"$i\"" >> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules"
 
     done
 ln -sf "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules" "/etc/udev/rules.d/75-firewall-persistant-net.rules"
