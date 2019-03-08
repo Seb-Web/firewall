@@ -8,7 +8,7 @@ Note sur l'auteur:
 Je ne suis pas expert informatique, mon expérience est purement autodidacte basé sur la lecture de tutoriel et documentation à ma disposition.
 Mon Dévelopement est basé sur l'expérimentation et la compréhension des concepts mis en place.
 Ne trouvant de solution à mon problème j'ai décidé de le résoudre moi même et de le partagé.
-Merci pour vos futurs commentaires qui ne maqueront pas d'améliorer ce projet.
+Merci pour vos futurs commentaires qui ne manqueront pas d'améliorer ce projet.
 
 
 Pourquoi ce projet ?
@@ -19,7 +19,7 @@ Exemple un firewall avec DMZ+ "n Zone physique" aura besoint de 2 carte Giga + "
 Ma reflexion a donc porté sur ses 2 points: ECOLOGIE et ECONOMIE.
 
 J'ai découvert depuis quelques années le monde des nanos PC (Architecture ARM) avec l'arrivée du "Raspberry pi".
-    Technologie Low consomation permetant de faire des Firewall/routeur, malheuresement meme avec les dernières version ces nano PC manquent cruellement de puissance réseau ( inteface 100Mbit ) et meme avec l'ajout d'usb/lan Gigabit on est Brider par l'usb2 du boitier.
+    Technologie Low consommation permetant de faire des Firewall/routeur, malheuresement meme avec les dernières version ces nanos PC manquent cruellement de puissance réseau ( inteface 100Mbit ) et meme avec l'ajout d'usb/lan Gigabit on est Brider par l'usb2 du boitier.
     
 J'ai tester plusieur type de nano PC avant de m'arreter sur l'ODROID XU4 carte reseau integrer Giga 1 port usb2 et 2port usb3
 
