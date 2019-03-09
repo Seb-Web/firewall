@@ -45,10 +45,16 @@ echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_loose
 echo "#enable TCP timestamps as SYN cookies utilize this TCP"
 echo 1 > /proc/sys/net/ipv4/tcp_timestamps
 echo "#Conntrack Entry Tuning (Calculate your own values ! depending on your hardware)"
-echo 65536 > /proc/sys/net/netfilter/nf_conntrack_max
+echo 200000 > /proc/sys/net/netfilter/nf_conntrack_max
+
+echo 500000 > /sys/module/nf_conntrack/parameters/hashsize 
+sysctl -p
+
+## anti DOS
+iptables -A INPUT -m state --state INVALID -j DROP
+
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
-
 iptables -A INPUT  -i "${red_iface}"    -m state --state ESTABLISHED -j ACCEPT
 iptables -A OUTPUT -o "${red_iface}"    -j ACCEPT
 iptables -A INPUT  -i "${green_iface}"  -j ACCEPT
