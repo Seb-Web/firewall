@@ -5,10 +5,14 @@ Réalisation d'un parefeu routeur à partir de scripts iptables.
 Compatible avec les distributions linux Debian et indépendant de l'architecture matériel
 
 Note sur l'auteur:
-Je ne suis pas expert informatique, mon expérience est purement autodidacte basé sur la lecture de tutoriel et documentation à ma disposition.
-Mon Dévelopement est basé sur l'expérimentation et la compréhension des concepts mis en place.
-Ne trouvant de solution à mon problème j'ai décidé de le résoudre moi même et de le partagé.
-Merci pour vos futurs commentaires qui ne manqueront pas d'améliorer ce projet.
+
+    Je ne suis pas expert informatique
+    mon expérience est purement autodidacte basé sur la lecture de tutoriel et documentation à ma disposition.
+    Mon Dévelopement est basé sur l'expérimentation et la compréhension des concepts mis en place.
+    Mon code peut etre archaïque, mais j'essaye toujours de le developper en vue de potentiel futur mise a jour.
+    Ne trouvant de solution à mon problème j'ai décidé de le résoudre moi même et de le partagé, plutot que d'attendre que quelqu'un le fasse pour moi.
+
+Merci pour vos futurs commentaires qui ne manqueront pas j'en suis sur d'améliorer ce projet.
 
 
 Pourquoi ce projet ?
