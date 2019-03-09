@@ -39,23 +39,23 @@ function iface_dispo()
 
 function saisie()
 {
-    local __in1=$1
-    local __in2=$2
+    local __texte=$1
+    local __variable=$2
+    local __regex=$3
 
     verif="0"
-
     while [ "$verif" == "0" ]
         do
-        echo -n -e "${__in1}"
-        read clavier
-        if [ "$clavier" == "" ]
+        echo -n -e "${__texte}"
+        read __saisie
+        if [[ "${__saisie}" =~ $__regex ]]
             then
-            echo "Erreur de saisie !""!"
-            else
             verif="1"
+            else
+            echo "Erreur de saisie !""!"
             fi
         done
-        eval $__in2="'$clavier'"
+        eval $__variable="'${__saisie}'"
 }
 # Récupération du répertoire d'éxecution du script
 rep_firewall=$(dirname $(readlink -f $0))
@@ -99,7 +99,7 @@ while [ ! "${confirm1}" == "oui" ]
             # on boucle sur la demande de choix, tant que l'on ne choisi pas une carte non configurer
             while [ true ]
                 do            
-                saisie "Quel est votre choix pour l'interface ${iface_color[${couleur}]}${couleur}\033[0m ? " 'iface_choix["${couleur}"]'
+                saisie "Quel est votre choix pour l'interface ${iface_color[${couleur}]}${couleur}\033[0m ? " 'iface_choix["${couleur}"]' '^[0-9]+'
                 if [ "${iface_choix["${iface_choix["${couleur}"]}"]}" == "" ] 
                     then 
                     iface_choix["${iface_choix["${couleur}"]}"]="${couleur}"
@@ -112,7 +112,7 @@ while [ ! "${confirm1}" == "oui" ]
                 then
                     while [ true ]
                     do
-                        saisie 'dhcp ou static : ' 'iface_inet["${couleur}"]'
+                        saisie 'dhcp ou static : ' 'iface_inet["${couleur}"]' '^(dhcp|static)$'
                         if [ "${iface_inet["${couleur}"]}" == "static" ]
                             then 
                             iface_inet["${couleur}"]="static"
@@ -127,11 +127,11 @@ while [ ! "${confirm1}" == "oui" ]
                 fi
             if [ "${iface_inet[${couleur}]}" == "static" ]
                 then
-                saisie 'réseau : ' 'iface_network["${iface_choix["${couleur}"]}"]'
-                saisie 'masque réseau : ' 'iface_netmask["${iface_choix["${couleur}"]}"]'
-                saisie 'adresse : ' 'iface_address["${iface_choix["${couleur}"]}"]'
-                saisie 'passerelle : ' 'iface_gateway["${iface_choix["${couleur}"]}"]'
-                saisie 'DNS : ' 'iface_dns["${iface_choix["${couleur}"]}"]'
+                saisie 'réseau : ' 'iface_network["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'masque réseau : ' 'iface_netmask["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'adresse : ' 'iface_address["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$' 
+                saisie 'passerelle : ' 'iface_gateway["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'DNS : ' 'iface_dns["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 fi
             echo
             echo -n "Confirmer (NON/oui) ? "
