@@ -55,7 +55,7 @@ iptables -A INPUT -m state --state INVALID -j DROP
 
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
-iptables -A INPUT  -i "${red_iface}"    -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT  -i "${red_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -o "${red_iface}"    -j ACCEPT
 iptables -A INPUT  -i "${green_iface}"  -j ACCEPT
 iptables -A OUTPUT -o "${green_iface}"  -j ACCEPT
