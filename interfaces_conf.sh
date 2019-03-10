@@ -3,18 +3,33 @@ extention=".dev"
 # Déclaration des variables
 # déclaration de l'architecture firewall
 
+#Code couleur associé a la zone
 declare -A zone_color=( ["red"]="\033[31m" ["green"]="\033[32m" ["orange"]="\033[33m" )
+#Inet associé a la zone
 declare -A zone_inet=( ["red"]="dhcp" ["green"]="static" ["orange"]="static" )
+#Interface associé à la zone de firewall
 declare -A zone_choix
+#Nom de l'interface
 declare -A iface_name
+#Zone de firewall associer à l'interface
+declare -A iface_zone
+#MAC adresse de l'interface
 declare -A iface_mac
+#Adresse de l'interface
 declare -A iface_address
+#Réseau de l'interface
 declare -A iface_network
+#Mask reseau de l'interface
 declare -A iface_netmask
+#Broadcast de l'interface
 declare -A iface_broadcast
+#Passerelle de l'interface
 declare -A iface_gateway
+#DNS de l'interface
 declare -A iface_dns
+#Model de l'interface
 declare -A iface_model
+#Vendeur de l'interface
 declare -A iface_vendor
 
 
@@ -25,7 +40,7 @@ function iface_dispo()
     echo
     for (( i=1;i<$count; i++))
         do
-        if [ "${iface_choix["${i}"]}" == "" ]
+        if [ "${iface_zone["${i}"]}" == "" ]
             then
             echo -e "#### Choix n° ${i}"
             echo -e "# ${iface_mac[${i}]}"
@@ -34,7 +49,7 @@ function iface_dispo()
             echo -e "####"
             echo
         else
-            echo -e "#### Choix n° ${i} ## ${zone_color[${iface_choix[${i}]}]}${iface_choix[${i}]}\033[0m ## ${iface_mac[${i}]} ## ${iface_network[${i}]}/${iface_netmask[${i}]} ## ${iface_address[${i}]}"
+            echo -e "#### Choix n° ${i} ## ${zone_color[${iface_zone[${i}]}]}--${iface_zone[${i}]}--\033[0m ## ${iface_mac[${i}]} ## ${iface_network[${i}]}/${iface_netmask[${i}]} ## ${iface_address[${i}]}"
             echo
         fi
     done
@@ -91,8 +106,9 @@ while [ ! "${confirm1}" == "oui" ]
     do
     clear
     unset zone_choix
+    unset iface_zone
     declare -A zone_choix
-
+    declare -A iface_zone
     for couleur in "${!zone_color[@]}"
         do
         confirm2="non"
@@ -103,28 +119,29 @@ while [ ! "${confirm1}" == "oui" ]
             while [ true ]
                 do            
                 saisie "Quel est votre choix pour l'interface ${zone_color[${couleur}]}${couleur}\033[0m ? " 'zone_choix["${couleur}"]' '^[0-9]+'
-                if [ ! "${zone_choix["${couleur}"]}" == "" ] 
+                if [ "${iface_zone["${zone_choix["${couleur}"]}"]}" == "" ] 
                     then 
+                    iface_zone["${zone_choix["${couleur}"]}"]=${couleur}
                     break
                     else
                     echo "Ce choix à déjà été parametré."
                     fi
                 done
-            if [ $couleur == "red" ]
+            if [ "${couleur}" == "red" ]
                 then
                 saisie 'dhcp ou static : ' 'iface_inet["${zone_choix[${couleur}]}"]' '^(dhcp|static)$'
                 fi
 
-            if [ "${iface_inet[${zone_choix[${couleur}]}]}" == "static" ]
+            if [ "${iface_inet["${zone_choix[${couleur}]}"]}" == "static" ] || [ ! "${couleur}" == "red" ]
                 then
-                saisie 'réseau : ' 'iface_network["${zone_choix[${couleur}]}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'réseau : ' 'iface_network["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'masque réseau : ' 'iface_netmask["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'adresse de broadcast : ' 'iface_broadcast["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'adresse : ' 'iface_address["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$' 
                 if [ $couleur == "red" ]
                     then
                     saisie 'passerelle : ' 'iface_gateway["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
-                    saisie 'DNS : ' 'iface_dns["${zone_choix[${couleur}]}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                    saisie 'DNS : ' 'iface_dns["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                     fi
                 fi
             echo
@@ -132,6 +149,7 @@ while [ ! "${confirm1}" == "oui" ]
             read confirm2
             if [ ! "${confirm2}" == "oui" ]
             then
+                unset iface_zone["${zone_choix["${couleur}"]}"]
                 unset zone_choix["${couleur}"]
             fi
             clear
