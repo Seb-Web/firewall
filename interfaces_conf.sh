@@ -9,11 +9,15 @@ declare -A iface_inet=( ["red"]="dhcp" ["green"]="static" ["orange"]="static" )
 declare -A iface_address
 declare -A iface_network
 declare -A iface_netmask
+declare -A iface_broadcast
 declare -A iface_gateway
 declare -A iface_dns
 declare -A iface_mac
 declare -A iface_model
 declare -A iface_vendor
+declare -A iface_zone
+declare -A iface_choix
+
 
 # Déclaration des fonction
 function iface_dispo()
@@ -87,7 +91,9 @@ confirm1="non"
 while [ ! "${confirm1}" == "oui" ]
     do
     clear
+    unset iface_zone
     unset iface_choix
+    declare -A iface_zone
     declare -A iface_choix
 
     for couleur in "${!iface_color[@]}"
@@ -99,10 +105,10 @@ while [ ! "${confirm1}" == "oui" ]
             # on boucle sur la demande de choix, tant que l'on ne choisi pas une carte non configurer
             while [ true ]
                 do            
-                saisie "Quel est votre choix pour l'interface ${iface_color[${couleur}]}${couleur}\033[0m ? " 'iface_choix["${couleur}"]' '^[0-9]+'
-                if [ "${iface_choix["${iface_choix["${couleur}"]}"]}" == "" ] 
+                saisie "Quel est votre choix pour l'interface ${iface_color[${couleur}]}${couleur}\033[0m ? " 'iface_zone["${couleur}"]' '^[0-9]+'
+                if [ "${iface_choix["${iface_zone["${couleur}"]}"]}" == "" ] 
                     then 
-                    iface_choix["${iface_choix["${couleur}"]}"]="${couleur}"
+                    iface_choix["${iface_zone["${couleur}"]}"]="${couleur}"
                     break
                     else
                     echo "Ce choix à déjà été parametré."
@@ -127,19 +133,23 @@ while [ ! "${confirm1}" == "oui" ]
                 fi
             if [ "${iface_inet[${couleur}]}" == "static" ]
                 then
-                saisie 'réseau : ' 'iface_network["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
-                saisie 'masque réseau : ' 'iface_netmask["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
-                saisie 'adresse : ' 'iface_address["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$' 
-                saisie 'passerelle : ' 'iface_gateway["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
-                saisie 'DNS : ' 'iface_dns["${iface_choix["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'réseau : ' 'iface_network["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'masque réseau : ' 'iface_netmask["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'adresse de broadcast : ' 'iface_broadcast["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                saisie 'adresse : ' 'iface_address["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$' 
+                if [ $couleur == "red" ]
+                    then
+                    saisie 'passerelle : ' 'iface_gateway["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                    saisie 'DNS : ' 'iface_dns["${iface_zone["${couleur}"]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
+                    fi
                 fi
             echo
             echo -n "Confirmer (NON/oui) ? "
             read confirm2
             if [ ! "${confirm2}" == "oui" ]
             then
-                unset iface_choix["${iface_choix["${couleur}"]}"]
-                unset iface_choix["${couleur}"]
+                unset iface_choix["${iface_zone["${couleur}"]}"]
+                unset iface_zone["${couleur}"]
             fi
             clear
             done
@@ -149,12 +159,36 @@ while [ ! "${confirm1}" == "oui" ]
     echo -n "Confirmer (NON/oui) ? "
     read confirm1
     done
-
+###
 # écriture des règles d'attribution de nom pour les interfaces
+
 echo > "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
-for i in "${!iface_choix[@]}"
+for i in "${!iface_zone_choix[@]}"
     do 
-    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${iface_choix["$i"]}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"$i\"" >> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
+    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${iface_zone_choix["$i"]}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"$i\"" >> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 
     done
 ln -sf "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}" "/etc/udev/rules.d/75-firewall-persistant-net.rules${extention}"
+
+##
+# ecriture de la Configuration des interface
+for zone in "${!iface_zone[@]}"
+    do
+    echo > "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+    echo "auto ${zone}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+    if [ "${iface_inet["${iface_choix[${iface_zone["${zone}"]}]}"]}" == "dhcp" ]
+        then
+        echo "iface ${zone} inet dhcp" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        else
+        echo "iface ${zone} inet static" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        echo "  network ${iface_network["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        echo "  netmask ${iface_netmask["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        echo "  address ${iface_address["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        echo "  broadcast ${iface_broadcast["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+        if [ "${zone}" == "red" ]
+            then
+            echo "  gateway ${iface_gateway["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+            echo "  dns-nameservers ${iface_dns["${iface_zone["${zone}"]}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${zone}"
+            fi
+        fi
+    done
