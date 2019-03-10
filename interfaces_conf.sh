@@ -120,7 +120,7 @@ while [ ! "${confirm1}" == "oui" ]
             # on boucle sur la demande de choix, tant que l'on ne choisi pas une carte non configurer
             while [ true ]
                 do            
-                saisie "Quel est votre choix pour l'interface ${zone_color[${couleur}]}${couleur}\033[0m ? " 'zone_choix["${couleur}"]' '^[0-9]+'
+                saisie "Quel est votre choix pour l'interface ${zone_color[${couleur}]}${couleur}\033[0m ? " 'zone_choix["${couleur}"]' '^[^0][0-9]*$'
                 if [ "${iface_zone["${zone_choix["${couleur}"]}"]}" == "" ] 
                     then 
                     iface_zone["${zone_choix["${couleur}"]}"]=${couleur}
