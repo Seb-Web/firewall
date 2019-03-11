@@ -3,6 +3,15 @@
 # Récupération du répertoire d'éxecution du script
 rep_firewall=$(dirname $(readlink -f $0))
 
+## chargement des module
+modprobe ip_conntrack_ftp
+modprobe ip_nat_ftp
+modprobe ip_conntrack_irc
+modprobe ip_conntrack
+modprobe iptable_nat
+#le module suivant n'est pas reconnu sous ubuntu bionic
+#modprobe iptable_filte
+
 ##réinitialisation des tables
 iptables -F
 iptables -X
@@ -89,8 +98,8 @@ iptables -A FORWARD -o "${orange_iface}" -i "${green_iface}"  -j ACCEPT
 
 
 ## Mise en place du masquerade
-iptables -t nat -A POSTROUTING -o "${red_iface}" -s "${orange_network}" -j MASQUERADE
-iptables -t nat -A POSTROUTING -o "${red_iface}" -s "${green_network}"  -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${red_iface}" ! -d "${red_ip}" -s "${orange_network}" -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${red_iface}" ! -d "${red_ip}" -s "${green_network}"  -j MASQUERADE
 
 # Mise en place du routage de port
 for i in "${!port_routage[@]}"
