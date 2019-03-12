@@ -6,7 +6,6 @@
 #
 #code de base:
 #
-
 #                     -----
 #                     | F |----| Zone 01 |
 #                     | I |
@@ -19,6 +18,7 @@
 #                     -----
 #
 #
+
 ## chargement des module
 modprobe ip_conntrack_ftp
 modprobe ip_nat_ftp
@@ -123,7 +123,7 @@ iptables -A FORWARD -i "${int_iface}"    -o "${zone01_iface}" -m state --state E
 ## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz 
 iptables -A FORWARD -i "${zone01_iface}" -o "${int_iface}" -j ACCEPT
 iptables -A FORWARD -i "${int_iface}"    -o "${zone02_iface}" -j ACCEPT
-## autorisation de forward zone01-->orange, pour les liens établies
+## autorisation de forward zone01-->zone02, pour les liens établies
 # tout ce qui vient de la zone01 en direction de la zone02 est accepter
 iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -j ACCEPT
 iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
@@ -162,8 +162,8 @@ iptables -t nat -A PREROUTING -i "${int_iface}" -p "udp" --dport "12000:12100" -
 #################################
 
 ## on bloque tout le reste
-iptables -A INPUT -i "${red_iface}"    -j REJECT
-iptables -A INPUT -i "${orange_iface}" -j REJECT
+iptables -A INPUT -i "${int_iface}"    -j REJECT
+iptables -A INPUT -i "${zone02_iface}" -j REJECT
 
 ## on liste l'état des tables iptables avec le numero des lignes
 iptables -nvL --line-number
