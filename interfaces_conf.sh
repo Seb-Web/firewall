@@ -119,10 +119,10 @@ while [ ! "${confirm1}" == "oui" ]
             iface_dispo
             # on boucle sur la demande de choix, tant que l'on ne choisi pas une carte non configurer
             while [ true ]
-                do            
+                do
                 saisie "Quel est votre choix pour l'interface ${zone_color[${couleur}]}${couleur}\033[0m ? " 'zone_choix["${couleur}"]' '^[^0][0-9]*$'
                 if [ "${iface_zone["${zone_choix["${couleur}"]}"]}" == "" ] 
-                    then 
+                    then
                     iface_zone["${zone_choix["${couleur}"]}"]=${couleur}
                     iface_name["${zone_choix["${couleur}"]}"]=${couleur}
                     break
@@ -171,7 +171,7 @@ while [ ! "${confirm1}" == "oui" ]
 #echo > "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 for i in "${!iface_name[@]}"
     do 
-    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${i}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", KERNEL==\"eth*\", NAME=\"${iface_name[${i}]}\"" 
+    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${i}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", NAME=\"${iface_name[${i}]}\"" 
 #>> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 
     done
