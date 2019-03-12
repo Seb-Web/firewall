@@ -4,9 +4,9 @@ extention=".dev"
 # déclaration de l'architecture firewall
 
 #Code couleur associé a la zone
-declare -A zone_color=( ["red"]="\033[31m" ["green"]="\033[32m" ["orange"]="\033[33m" )
+declare -A zone_color=( ["int01"]="\033[31m" ["zone01"]="\033[32m" ["zone02"]="\033[33m" )
 #Inet associé a la zone
-declare -A zone_inet=( ["red"]="dhcp" ["green"]="static" ["orange"]="static" )
+declare -A zone_inet=( ["int01"]="dhcp" ["zone01"]="static" ["zone02"]="static" )
 #Interface associé à la zone de firewall
 declare -A zone_choix
 #Nom de l'interface
@@ -130,19 +130,19 @@ while [ ! "${confirm1}" == "oui" ]
                     echo "Ce choix à déjà été parametré."
                     fi
                 done
-            if [ "${couleur}" == "red" ]
+            if [ "${couleur}" == "int01" ]
                 then
                 saisie 'dhcp ou static : ' 'iface_inet["${zone_choix[${couleur}]}"]' '^(dhcp|static)$'
                 fi
 
-            if [ "${iface_inet["${zone_choix[${couleur}]}"]}" == "static" ] || [ ! "${couleur}" == "red" ]
+            if [ "${iface_inet["${zone_choix[${couleur}]}"]}" == "static" ] || [ ! "${couleur}" == "int01" ]
                 then
                 iface_inet["${zone_choix[${couleur}]}"]="static"
                 saisie 'réseau : ' 'iface_network["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'masque réseau : ' 'iface_netmask["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'adresse de broadcast : ' 'iface_broadcast["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                 saisie 'adresse : ' 'iface_address["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$' 
-                if [ $couleur == "red" ]
+                if [ $couleur == "int01" ]
                     then
                     saisie 'passerelle : ' 'iface_gateway["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
                     saisie 'DNS : ' 'iface_dns["${zone_choix[${couleur}]}"]' '^(((2[0-5]{2})|(1{0,1}[0-9]{1,2}))\.){3}((2[0-5]{2})|(1{0,1}[0-9]{1,2}))$'
@@ -165,17 +165,26 @@ while [ ! "${confirm1}" == "oui" ]
     echo -n "Confirmer (NON/oui) ? "
     read confirm1
     done
+
+###
+#écriture du fichier de configuration pour les zone du firewall
+echo > "${rep_firewall}/config/zones_def${extention}"
+for i in "${!iface_name[@]}"
+    do
+    echo "${iface_zone[${i}]}_iface=\"${iface_name[${i}]}\"" >> "${rep_firewall}/config/zones_def${extention}"
+    echo "${iface_zone[${i}]}_address=\"${iface_address[${i}]}\"" >> "${rep_firewall}/config/zones_def${extention}"
+    echo "${iface_zone[${i}]}_network=\"${iface_network[${i}]}/${iface_netmask[${i}]}\"" >> "${rep_firewall}/config/zones_def${extention}"
+    done
 ###
 # écriture des règles d'attribution de nom pour les interfaces
 
 #echo > "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 for i in "${!iface_name[@]}"
     do 
-    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${i}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", NAME=\"${iface_name[${i}]}\"" 
-#>> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
+    echo -e "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${iface_mac[${i}]}\", ATTR{dev_id}==\"0x0\", ATTR{type}==\"1\", NAME=\"${iface_name[${i}]}\"" >> "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 
     done
-#ln -sf "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}" "/etc/udev/rules.d/75-firewall-persistant-net.rules${extention}"
+ln -sf "${rep_firewall}/config/udev/rules.d/75-firewall-persistant-net.rules${extention}" "/etc/udev/rules.d/75-firewall-persistant-net.rules${extention}"
 
 ###
 #écriture de la Configuration des interface
@@ -184,7 +193,7 @@ for i in "${!iface_name[@]}"
     do
     #ecriture de la configuration de l'interface dans un fichier portant le nom de l'interface
     echo > "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
-    echo "auto ${iface_name["$i"]}" #>> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
+    echo "auto ${iface_name["$i"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
     if [ "${iface_inet["${i}"]}" == "dhcp" ]
         then
         #Si l'interface a été configuré en dhcp 
@@ -197,9 +206,9 @@ for i in "${!iface_name[@]}"
             echo "  netmask ${iface_netmask["${i}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
             echo "  address ${iface_address["${i}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
             echo "  broadcast ${iface_broadcast["${i}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
-            if [ "${iface_zone["${i}"]}" == "red" ]
+            if [ "${iface_zone["${i}"]}" == "int01" ]
                 then
-                #Si la zone est de type RED et que le inet est static, on parametre la GATEWAY ainsi que le DNS
+                #Si la zone est de type int01 et que le inet est static, on parametre la GATEWAY ainsi que le DNS
                 echo "  gateway ${iface_gateway["${i}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
                 echo "  dns-nameservers ${iface_dns["${i}"]}" >> "${rep_firewall}/config/etc/network/interfaces.d/${iface_name["${i}"]}"
                 fi
