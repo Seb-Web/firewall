@@ -28,7 +28,7 @@ iptables -t nat -F POSTROUTING
 ####initialisation des variables
 port_ssh=60022
 # interfaces
-source "${rep_firewall}/config/interfaces"
+source "${rep_firewall}/config/zone_def"
 # port routage
 source "${rep_firewall}/config/ports_routage"
 
@@ -74,23 +74,23 @@ iptables -A INPUT -m state --state INVALID -j DROP
 
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
-iptables -A INPUT  -i "${int_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
-iptables -A OUTPUT -o "${int_iface}"    -j ACCEPT
+iptables -A INPUT  -i "${int01_iface}"    -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A OUTPUT -o "${int01_iface}"    -j ACCEPT
 iptables -A INPUT  -i "${zone01_iface}"  -j ACCEPT
 iptables -A OUTPUT -o "${zone01_iface}"  -j ACCEPT
 iptables -A INPUT  -i "${zone02_iface}" -j ACCEPT
 iptables -A OUTPUT -o "${zone02_iface}" -j ACCEPT
 
 ## On autorise les ports necessaires a notre configuration serveur :
-iptables -A INPUT  -i "${int_iface}"    -p tcp --dport ${port_ssh} -j ACCEPT
-#iptables -A INPUT  -i "${int_iface}"    -p tcp --dport 60443 -j ACCEPT
+iptables -A INPUT  -i "${int01_iface}"    -p tcp --dport ${port_ssh} -j ACCEPT
+#iptables -A INPUT  -i "${int01_iface}"    -p tcp --dport 60443 -j ACCEPT
 
 ## autorisation de forward int<-->zone01 pour les liens établies, cette zone est une zone de travail
-iptables -A FORWARD -i "${zone01_iface}" -o "${int_iface}" -j ACCEPT
-iptables -A FORWARD -i "${int_iface}"    -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}" -j ACCEPT
+iptables -A FORWARD -i "${int01_iface}"    -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 ## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz
-iptables -A FORWARD -i "${zone02_iface}" -o "${int_iface}" -j ACCEPT
-iptables -A FORWARD -i "${int_iface}"    -o "${zone02_iface}" -j ACCEPT
+iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}" -j ACCEPT
+iptables -A FORWARD -i "${int01_iface}"    -o "${zone02_iface}" -j ACCEPT
 ## autorisation de forward zone01-->zone02, pour les liens établies
 # tout ce qui vient de la zone01 en direction de la zone02 est accepter
 iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -j ACCEPT
@@ -99,24 +99,24 @@ iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state E
 ## Mise en place du masquerade
 # a l'exeption de tout ce qui est a destination de l'ip internet
 # ce qui permet un rebouclage sur les service interne avec un DNS externe
-iptables -t nat -A POSTROUTING -o "${int_iface}" ! -d "${int_ip}" -s "${zone01_network}" -j MASQUERADE
-iptables -t nat -A POSTROUTING -o "${int_iface}" ! -d "${int_ip}" -s "${zone02_network}" -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${int01_iface}" ! -d "${int01_ip}" -s "${zone01_network}" -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${int01_iface}" ! -d "${int01_ip}" -s "${zone02_network}" -j MASQUERADE
 
 # Mise en place du routage de port
 for i in "${!port_routage[@]}"
 	do
 	service_name=`echo "${port_routage[$i]}" | cut -d "|" -f1`
 	proto=`echo "${port_routage[$i]}" | cut -d "|" -f2`
-	int_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
+	int01_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
 	ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
 	port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
     echo "${service_name}"
-    echo "iptables -t nat -A PREROUTING -i \"${int_iface}\" -p \"${proto}\" --dport \"${int_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
-    iptables -t nat -A PREROUTING -i "${int_iface}" -p "${proto}" --dport "${int_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
+    echo "iptables -t nat -A PREROUTING -i \"${int01_iface}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+    iptables -t nat -A PREROUTING -i "${int01_iface}" -p "${proto}" --dport "${int01_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
 	done
 
 ## on bloque tout le reste
-iptables -A INPUT -i "${int_iface}"    -j REJECT
+iptables -A INPUT -i "${int01_iface}"    -j REJECT
 iptables -A INPUT -i "${zone02_iface}" -j REJECT
 
 iptables -nvL --line-number
