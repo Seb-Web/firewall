@@ -28,7 +28,7 @@ iptables -t nat -F POSTROUTING
 ####initialisation des variables
 port_ssh=60022
 # interfaces
-source "${rep_firewall}/config/zone_def"
+source "${rep_firewall}/config/zones_def"
 # port routage
 source "${rep_firewall}/config/ports_routage"
 
