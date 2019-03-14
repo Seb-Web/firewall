@@ -13,8 +13,7 @@ modprobe ip_nat_ftp
 modprobe ip_conntrack_irc
 modprobe ip_conntrack
 modprobe iptable_nat
-#le module suivant n'est pas reconnu sous ubuntu bionic
-#modprobe iptable_filte
+modprobe iptable_filter
 
 ##réinitialisation des tables
 iptables -F
