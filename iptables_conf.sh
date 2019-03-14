@@ -26,11 +26,13 @@ iptables -t mangle -X
 iptables -t nat -F POSTROUTING
 
 ####initialisation des variables
-port_ssh=60022
+
 # interfaces
 source "${rep_firewall}/config/zones_def"
 # port routage
 source "${rep_firewall}/config/ports_routage"
+# acces externe
+source "${rep_firewall}/config/acces_externe"
 
 ## Autoriser le trafic local
 iptables -A INPUT  -i lo -j ACCEPT
@@ -82,18 +84,21 @@ iptables -A INPUT  -i "${zone02_iface}" -j ACCEPT
 iptables -A OUTPUT -o "${zone02_iface}" -j ACCEPT
 
 ## On autorise les ports necessaires a notre configuration serveur :
-iptables -A INPUT  -i "${int01_iface}"    -p tcp --dport ${port_ssh} -j ACCEPT
-#iptables -A INPUT  -i "${int01_iface}"    -p tcp --dport 60443 -j ACCEPT
+iptables -A INPUT  -i "${int01_iface}" -s "${ssh_source}"   -p tcp --dport "${ssh_port}" -j ACCEPT
 
 ## autorisation de forward int<-->zone01 pour les liens établies, cette zone est une zone de travail
-iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
-iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED     -j ACCEPT
+iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -j ACCEPT
+iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+
+
 ## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz
-iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
-iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -m state --state ESTABLISHED,RELATED     -j ACCEPT
+iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -j ACCEPT
+iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+
+
 ## autorisation de forward zone01-->zone02, pour les liens établies
 # tout ce qui vient de la zone01 en direction de la zone02 est accepter
-iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 ## Mise en place du masquerade
@@ -101,6 +106,9 @@ iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state E
 # ce qui permet un rebouclage sur les service interne avec un DNS externe
 iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone01_network}" -j MASQUERADE
 iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone02_network}" -j MASQUERADE
+
+
+
 # Mise en place du routage de port
 for i in "${!port_routage[@]}"
     do
