@@ -1,3 +1,4 @@
 # Ce fichier de parametrage contient les ports permettant un acces direct au firewall depuis l'exterieur
-ssh_port="22"
-ssh_source="0.0.0.0/0"
+acces_externe=( \
+"SSH|tcp|60022|0.0.0.0/0" \
+)
