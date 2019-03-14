@@ -83,8 +83,20 @@ iptables -A INPUT  -i "${zone02_iface}" -j ACCEPT
 iptables -A OUTPUT -o "${zone02_iface}" -j ACCEPT
 
 ## On autorise les ports necessaires a notre configuration serveur :
-iptables -A INPUT  -i "${int01_iface}" -s "${ssh_source}"   -p tcp --dport "${ssh_port}" -j ACCEPT
-
+echo "######## PARAMATRAGE DES ACCES EXTERNE ########"
+echo "###############################################"
+for params in "${!acces_externe[@]}"
+    do
+    param_source=`echo "${acces_externe[${params}]}" | cut -d"|" -f4`
+    param_port=`echo "${acces_externe[${params}]}" | cut -d"|" -f3`
+    param_proto=`echo "${acces_externe[${params}]}" | cut -d"|" -f2`
+    param_nom=`echo "${acces_externe[${params}]}" | cut -d"|" -f1`
+    echo "${param_nom} --> iptables -A INPUT  -i \"${int01_iface}\" -s \"${param_source}\" -p \"${param_proto}\" --dport \"${param_port}\" -j ACCEPT"
+    iptables -A INPUT  -i "${int01_iface}" -s "${param_source}" -p "${param_proto}" --dport "${param_port}" -j ACCEPT
+    done
+echo "###############################################"
+echo
+echo "########## AUTORISATION DES FORWARD ###########"
 ## autorisation de forward int<-->zone01 pour les liens établies, cette zone est une zone de travail
 iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -j ACCEPT
 iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
@@ -99,16 +111,18 @@ iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -m state --state N
 # tout ce qui vient de la zone01 en direction de la zone02 est accepter
 iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
-
+echo "###############################################"
+echo
 ## Mise en place du masquerade
 # a l'exeption de tout ce qui est a destination de l'ip internet
 # ce qui permet un rebouclage sur les service interne avec un DNS externe
+echo "######### MISE EN PLACE DU MASQUERADE #########"
 iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone01_network}" -j MASQUERADE
 iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone02_network}" -j MASQUERADE
-
-
-
+echo "###############################################"
+echo
 # Mise en place du routage de port
+echo "############ MISE EN PLACE DU DNAT ############"
 for i in "${!port_routage[@]}"
     do
     service_name=`echo "${port_routage[$i]}" | cut -d "|" -f1`
@@ -120,10 +134,12 @@ for i in "${!port_routage[@]}"
     echo "iptables -t nat -A PREROUTING -d \"${int01_ip}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
     iptables -t nat -A PREROUTING  -d "${int01_ip}" -p "${proto}" --dport "${int01_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
     done
+echo "###############################################"
+echo
 
 ## on bloque tout le reste
-iptables -A INPUT -i "${int01_iface}"    -j REJECT
+iptables -A INPUT -i "${int01_iface}"  -j REJECT
 iptables -A INPUT -i "${zone02_iface}" -j REJECT
 
 iptables -nvL --line-number
-iptables -t nat -vL --line-number
+iptables -t nat -nvL --line-number
