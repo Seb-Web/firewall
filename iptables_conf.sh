@@ -89,11 +89,11 @@ iptables -A INPUT  -i "${int01_iface}"    -p tcp --dport ${port_ssh} -j ACCEPT
 iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED     -j ACCEPT
 ## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz
-iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -j ACCEPT
-iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -j ACCEPT
+iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -m state --state ESTABLISHED,RELATED     -j ACCEPT
 ## autorisation de forward zone01-->zone02, pour les liens établies
 # tout ce qui vient de la zone01 en direction de la zone02 est accepter
-iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -j ACCEPT
+iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 ## Mise en place du masquerade
