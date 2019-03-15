@@ -1,8 +1,8 @@
 function iface_detect()
 {
-    # Cette fonction doit avoir 3 valeur d'entrée identifiant les tableu a remplir
+    # Cette fonction doit avoir 3 valeurs d'entrées identifiant les tableu a remplir
     # exemple iface_detect "iface_mac" "iface_model" "iface_vendor"
-    # le resultat sera stocké dans les tableaux indexer iface_mac[@] iface_model[@] et iface_vendor[@]
+    # le resultat sera stocké dans les tableaux indexés iface_mac[@] iface_model[@] et iface_vendor[@]
     local __tab_mac=$1
     local __tab_model=$2
     local __tab_vendor=$3
