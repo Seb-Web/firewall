@@ -4,7 +4,7 @@
 rep_firewall=$(dirname $(readlink -f $0))
 
 #Chargement de l'entete de présentation
-source "${rep_firewall}/config/entete"
+source "${rep_firewall}/config/entete.conf"
 read -s -n1 -p "Appuyez sur une touche pour continuer..."; echo
 
 ## chargement des module
@@ -27,11 +27,11 @@ iptables -t nat -F POSTROUTING
 ####initialisation des variables
 
 # interfaces
-source "${rep_firewall}/config/zones_def"
+source "${rep_firewall}/config/zones_def.conf"
 # port routage
-source "${rep_firewall}/config/ports_routage"
+source "${rep_firewall}/config/ports_routage.conf"
 # acces externe
-source "${rep_firewall}/config/acces_externe"
+source "${rep_firewall}/config/acces_externe.conf"
 
 ## Autoriser le trafic local
 iptables -A INPUT  -i lo -j ACCEPT
@@ -73,8 +73,11 @@ sysctl -p
 ## anti DOS
 iptables -A INPUT -m state --state INVALID -j DROP
 
+## Blocage de l'icmp autre que pour la zone01
+#iptables -A INPUT -p icmp ! -s {$zone01_network} -j DROP
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
+
 iptables -A INPUT  -i "${int01_iface}"  -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -o "${int01_iface}"  -j ACCEPT
 iptables -A INPUT  -i "${zone01_iface}" -j ACCEPT
@@ -97,10 +100,10 @@ for params in "${!acces_externe[@]}"
 echo "###############################################"
 echo
 echo "########## AUTORISATION DES FORWARD ###########"
+
 ## autorisation de forward int<-->zone01 pour les liens établies, cette zone est une zone de travail
 iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -j ACCEPT
 iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
-
 
 ## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz
 iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -j ACCEPT
@@ -131,8 +134,9 @@ for i in "${!port_routage[@]}"
     ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
     port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
     echo "${service_name}"
-    echo "iptables -t nat -A PREROUTING -d \"${int01_ip}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
-    iptables -t nat -A PREROUTING  -d "${int01_ip}" -p "${proto}" --dport "${int01_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
+    echo "iptables -t nat -A PREROUTING -i \"${int01_iface}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+#       echo "iptables -t nat -A PREROUTING -d \"${int01_address}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+    iptables -t nat -A PREROUTING  -i "${int01_iface}" -p "${proto}" --dport "${int01_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
     done
 echo "###############################################"
 echo

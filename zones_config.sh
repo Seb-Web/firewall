@@ -4,6 +4,7 @@ clear
 # Récupération du répertoire d'éxecution du script en cour
 rep_exec=$(dirname $(readlink -f $0))
 rep_fonctions="${rep_exec}/fonctions"
+rep_config="${rep_exec}/config"
 # Chargement des fonctions
 source "${rep_fonctions}/fonction_pause.sh"
 source "${rep_fonctions}/fonction_saisie.sh"
@@ -13,75 +14,67 @@ source "${rep_fonctions}/fonction_iface_vue.sh"
 # Chargement de l'entete
 source "${rep_exec}/entetes/entete_zones_config"
 
-# Déclaration des variables
-# déclaration de l'architecture firewall
+# Chargement des variable
+source "${rep_config}/vars.conf"
 
-# extentioon sert à modifier l'extention des fichier créer pour un dev
-extention=".dev"
-#Code couleur associé a la zone
-declare -A zone_color=( ["int01"]="\033[31m" ["zone01"]="\033[32m" ["zone02"]="\033[33m" )
-#Inet associé a la zone
-declare -A zone_inet=( ["int01"]="dhcp" ["zone01"]="static" ["zone02"]="static" )
-#Interface associé à la zone de firewall
-declare -A zone_choix
-#Nom de l'interface
-declare -A iface_name
-#Zone de firewall associer à l'interface
-declare -A iface_zone
-#MAC adresse de l'interface
-declare -A iface_mac
-#inet de l'interface
-declare -A iface_inet
-#Adresse de l'interface
-declare -A iface_address
-#Réseau de l'interface
-declare -A iface_network
-#Mask reseau de l'interface
-declare -A iface_netmask
-#Broadcast de l'interface
-declare -A iface_broadcast
-#Passerelle de l'interface
-declare -A iface_gateway
-#DNS de l'interface
-declare -A iface_dns
-#Model de l'interface
-declare -A iface_model
-#Vendeur de l'interface
-declare -A iface_vendor
+pause
 
 # Récupération des informations sur les interfaces réseau detecté par le système
-iface_detect "iface_mac" "iface_model" "iface_vendor"
-echo "${#iface_mac[@]}"
-iface_vue
-zone_nb="10"
-echo "##${zone_nb}##${iface_count}##"
-while (( "${zone_nb}" > "$((${iface_count}-1))" ))
+iface_detect 'iface_mac' 'iface_model' 'iface_vendor'
+
+# On fixe le nombre de zone max au nombre d'interface trouvé moins celle de l'internet
+zone_max=$((iface_count-1))
+#initialisation de la variable de saisie avec le nombre d'interface ce qui correspont à < zone max +1 >
+zone_nb=${iface_count}
+
+while (( "${zone_nb}" > "${zone_max}" ))
 do
-    saisie "Combien de zones voulez-vous configurer ? " "zone_nb" "^[1-9]$"
+    saisie "Combien de zones voulez-vous configurer ? " "zone_nb" "^(!(0a-zA-Z)|[1-9]|([1-9][0-9]))$"
+    if (( ${zone_nb} > ${zone_max} ))
+    then
+        echo -e '\033[31m!!! '"Il n'y a pas assez d'interface"' !!!\033[0m'
+    fi
 done
-saisie "Quel est votre choix pour l'interface \033[31minternet\033[0m ? " 'zone_choix["int01"]' '^[^0][0-9]*$'
-iface_zone[${zone_choix["int01"]}]="int01"
+# Aperçu du materiel reseau detecter
+clear
 iface_vue
-for (( i=1; i<=${zone_nb} ; i++ ))
+saisie "Quel est votre choix pour l'interface \033[31minternet\033[0m ? " 'zone_choix["int01"]' "([1-9]|([1-9][0-9]))$"
+iface_zone[${zone_choix["int01"]}]="int01"
+saisie 'dhcp ou static : ' 'iface_inet["${zone_choix["int01"]}"]' '^(dhcp|static)$'
+if [ "${iface_inet["${zone_choix["int01"]}"]}" == "static" ]
+then
+    saisie 'réseau : ' "iface_network["${zone_choix["int01"]}"]" "^${regex_match_address}/${regex_match_network}$"
+    saisie 'adresse : ' "iface_address["${zone_choix["int01"]}"]" "^${regex_match_address}$" 
+    saisie 'passerelle : ' "iface_gateway["${zone_choix["int01"]}"]" "^${regex_match_address}$"
+    saisie 'DNS : ' "iface_dns["${zone_choix["int01"]}"]" "${regex_match_address}$"
+fi
+
+for (( i=1 ; i <= ${zone_nb} ; i++ ))
 do
+    # Aperçu du materiel reseau detecter
+    clear
+echo "###${i}"
+    iface_vue
     # on boucle sur la demande de choix, tant que l'on ne choisi pas une carte non configurer
     while [ true ]
     do
-        saisie "Quel est votre choix pour la zone ${i} ? " 'zone_choix["zone0${i}"]' '^[^0][0-9]*$'
-        if [ "${iface_zone["${zone_choix["zone0${i}"]}"]}" == "" ] 
+        saisie "Quel est votre choix pour \033[33mla zone ${i}\033[0m ? " 'zone_choix["zone${i}"]' '^(!(0a-zA-Z)|[1-9]|([1][0]))$'
+        if [ "${iface_zone["${zone_choix["zone${i}"]}"]}" == "" ] 
         then
-            iface_zone["${zone_choix["zone0${i}"]}"]="zone0${i}"
-            iface_name["${zone_choix["zone0${i}"]}"]="zone0${i}"
+            iface_zone["${zone_choix["zone${i}"]}"]="zone${i}"
+            iface_name["${zone_choix["zone${i}"]}"]="zone${i}"
+            iface_inet["${zone_choix["zone${i}"]}"]="static"
+            saisie 'réseau : ' "iface_network["${zone_choix["zone${i}"]}"]" "^${regex_match_address}/${regex_match_network}$"
+            saisie 'adresse : ' "iface_address["${zone_choix["zone${i}"]}"]" "^${regex_match_address}$" 
             break
         else
             echo "Ce choix à déjà été parametré."
         fi
     done
-    iface_vue
 done
-echo ${#zone_choix[@]}
-echo ${!zone_choix[@]}
-echo ${zone_choix[@]}
+clear
+iface_vue
+pause
 exit
 
 # Paramétrage des cartes réseaux
