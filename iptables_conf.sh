@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # Récupération du répertoire d'éxecution du script
-rep_firewall=$(dirname $(readlink -f $0))
+rep_exec=$(dirname $(readlink -f $0))
+rep_fonctions="${rep_exec}/fonctions"
+rep_config="${rep_exec}/config"
 
+clear
 #Chargement de l'entete de présentation
-source "${rep_firewall}/config/entete.conf"
+source "${rep_exec}/entetes/entete_iptables_conf"
 read -s -n1 -p "Appuyez sur une touche pour continuer..."; echo
 
 ## chargement des module
@@ -27,15 +30,19 @@ iptables -t nat -F POSTROUTING
 ####initialisation des variables
 
 # interfaces
-source "${rep_firewall}/config/zones_def.conf"
+source "${rep_config}/zones_def.conf"
 # port routage
-source "${rep_firewall}/config/ports_routage.conf"
+source "${rep_config}/ports_routage.conf"
 # acces externe
-source "${rep_firewall}/config/acces_externe.conf"
+source "${rep_config}/acces_externe.conf"
 
 ## Autoriser le trafic local
 iptables -A INPUT  -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
+##### ne pas perdre la main pendant la phase de dev
+iptables -A INPUT  -i zone1 -s 192.168.200.0/24 -j ACCEPT
+iptables -A OUTPUT -o zone1 -d 192.168.200.0/24 -j ACCEPT
+##### /ne pas perdre la main pendant la phase de dev
 
 ##Préréglage en mode fortress
 iptables -P INPUT   DROP
@@ -73,17 +80,17 @@ sysctl -p
 ## anti DOS
 iptables -A INPUT -m state --state INVALID -j DROP
 
-## Blocage de l'icmp autre que pour la zone01
-#iptables -A INPUT -p icmp ! -s {$zone01_network} -j DROP
+## Blocage de l'icmp autre que pour la zone1
+#iptables -A INPUT -p icmp ! -s {$zone1_network} -j DROP
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
 
-iptables -A INPUT  -i "${int01_iface}"  -m state --state ESTABLISHED,RELATED -j ACCEPT
-iptables -A OUTPUT -o "${int01_iface}"  -j ACCEPT
-iptables -A INPUT  -i "${zone01_iface}" -j ACCEPT
-iptables -A OUTPUT -o "${zone01_iface}" -j ACCEPT
-iptables -A INPUT  -i "${zone02_iface}" -j ACCEPT
-iptables -A OUTPUT -o "${zone02_iface}" -j ACCEPT
+iptables -A INPUT  -i "${int1_iface}"  -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A OUTPUT -o "${int1_iface}"  -j ACCEPT
+iptables -A INPUT  -i "${zone1_iface}" -j ACCEPT
+iptables -A OUTPUT -o "${zone1_iface}" -j ACCEPT
+iptables -A INPUT  -i "${zone2_iface}" -j ACCEPT
+iptables -A OUTPUT -o "${zone2_iface}" -j ACCEPT
 
 ## On autorise les ports necessaires a notre configuration serveur :
 echo "######## PARAMATRAGE DES ACCES EXTERNE ########"
@@ -94,34 +101,34 @@ for params in "${!acces_externe[@]}"
     param_port=`echo "${acces_externe[${params}]}" | cut -d"|" -f3`
     param_proto=`echo "${acces_externe[${params}]}" | cut -d"|" -f2`
     param_nom=`echo "${acces_externe[${params}]}" | cut -d"|" -f1`
-    echo "${param_nom} --> iptables -A INPUT  -i \"${int01_iface}\" -s \"${param_source}\" -p \"${param_proto}\" --dport \"${param_port}\" -j ACCEPT"
-    iptables -A INPUT  -i "${int01_iface}" -s "${param_source}" -p "${param_proto}" --dport "${param_port}" -j ACCEPT
+    echo "${param_nom} --> iptables -A INPUT  -i \"${int1_iface}\" -s \"${param_source}\" -p \"${param_proto}\" --dport \"${param_port}\" -j ACCEPT"
+    iptables -A INPUT  -i "${int1_iface}" -s "${param_source}" -p "${param_proto}" --dport "${param_port}" -j ACCEPT
     done
 echo "###############################################"
 echo
 echo "########## AUTORISATION DES FORWARD ###########"
 
-## autorisation de forward int<-->zone01 pour les liens établies, cette zone est une zone de travail
-iptables -A FORWARD -i "${zone01_iface}" -o "${int01_iface}"  -j ACCEPT
-iptables -A FORWARD -i "${int01_iface}"  -o "${zone01_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+## autorisation de forward int<-->zone1 pour les liens établies, cette zone est une zone de travail
+iptables -A FORWARD -i "${zone1_iface}" -o "${int1_iface}"  -j ACCEPT
+iptables -A FORWARD -i "${int1_iface}"  -o "${zone1_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
 
-## autorisation de forward int<-->zone02 pour les liens établies, cette zone est une dmz
-iptables -A FORWARD -i "${zone02_iface}" -o "${int01_iface}"  -j ACCEPT
-iptables -A FORWARD -i "${int01_iface}"  -o "${zone02_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+## autorisation de forward int<-->zone2 pour les liens établies, cette zone est une dmz
+iptables -A FORWARD -i "${zone2_iface}" -o "${int1_iface}"  -j ACCEPT
+iptables -A FORWARD -i "${int1_iface}"  -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
 
 
-## autorisation de forward zone01-->zone02, pour les liens établies
-# tout ce qui vient de la zone01 en direction de la zone02 est accepter
-iptables -A FORWARD -i "${zone01_iface}" -o "${zone02_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
-iptables -A FORWARD -i "${zone02_iface}" -o "${zone01_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+## autorisation de forward zone1-->zone2, pour les liens établies
+# tout ce qui vient de la zone1 en direction de la zone2 est accepter
+iptables -A FORWARD -i "${zone1_iface}" -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i "${zone2_iface}" -o "${zone1_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 echo "###############################################"
 echo
 ## Mise en place du masquerade
 # a l'exeption de tout ce qui est a destination de l'ip internet
 # ce qui permet un rebouclage sur les service interne avec un DNS externe
 echo "######### MISE EN PLACE DU MASQUERADE #########"
-iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone01_network}" -j MASQUERADE
-iptables -t nat -A POSTROUTING -o "${int01_iface}" -s "${zone02_network}" -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${int1_iface}" -s "${zone1_network}" -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "${int1_iface}" -s "${zone2_network}" -j MASQUERADE
 echo "###############################################"
 echo
 # Mise en place du routage de port
@@ -130,20 +137,20 @@ for i in "${!port_routage[@]}"
     do
     service_name=`echo "${port_routage[$i]}" | cut -d "|" -f1`
     proto=`echo "${port_routage[$i]}" | cut -d "|" -f2`
-    int01_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
+    int1_port=`echo "${port_routage[$i]}" | cut -d "|" -f3`
     ip_destination=`echo "${port_routage[$i]}" | cut -d "|" -f4`
     port_destination=`echo "${port_routage[$i]}" | cut -d "|" -f5`
     echo "${service_name}"
-    echo "iptables -t nat -A PREROUTING -i \"${int01_iface}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
-#       echo "iptables -t nat -A PREROUTING -d \"${int01_address}\" -p \"${proto}\" --dport \"${int01_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
-    iptables -t nat -A PREROUTING  -i "${int01_iface}" -p "${proto}" --dport "${int01_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
+    echo "iptables -t nat -A PREROUTING -i \"${int1_iface}\" -p \"${proto}\" --dport \"${int1_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+#       echo "iptables -t nat -A PREROUTING -d \"${int1_address}\" -p \"${proto}\" --dport \"${int1_port}\" -j DNAT --to-destination \"${ip_destination}:${port_destination}\""
+    iptables -t nat -A PREROUTING  -i "${int1_iface}" -p "${proto}" --dport "${int1_port}" -j DNAT --to-destination "${ip_destination}:${port_destination}"
     done
 echo "###############################################"
 echo
 
 ## on bloque tout le reste
-iptables -A INPUT -i "${int01_iface}"  -j REJECT
-iptables -A INPUT -i "${zone02_iface}" -j REJECT
+iptables -A INPUT -i "${int1_iface}"  -j REJECT
+iptables -A INPUT -i "${zone2_iface}" -j REJECT
 
 iptables -nvL --line-number
 iptables -t nat -nvL --line-number
