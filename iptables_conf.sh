@@ -39,10 +39,10 @@ source "${rep_config}/acces_externe.conf"
 ## Autoriser le trafic local
 iptables -A INPUT  -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
-##### ne pas perdre la main pendant la phase de dev
+##### ne pas perdre la main pendant la phase de dev 
 iptables -A INPUT  -i zone1 -s 192.168.200.0/24 -j ACCEPT
 iptables -A OUTPUT -o zone1 -d 192.168.200.0/24 -j ACCEPT
-##### /ne pas perdre la main pendant la phase de dev
+##### /ne pas perdre la main pendant la phase de dev 
 
 ##Préréglage en mode fortress
 iptables -P INPUT   DROP
