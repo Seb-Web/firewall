@@ -4,11 +4,12 @@
 rep_exec=$(dirname $(readlink -f $0))
 rep_fonctions="${rep_exec}/fonctions"
 rep_config="${rep_exec}/config"
-
+# Chargement des fonctions
+source "${rep_fonctions}/fonction_pause.sh"
 clear
 #Chargement de l'entete de présentation
 source "${rep_exec}/entetes/entete_iptables_conf"
-read -s -n1 -p "Appuyez sur une touche pour continuer..."; echo
+pause
 
 ## chargement des module
 modprobe ip_conntrack_ftp
@@ -31,6 +32,7 @@ iptables -t nat -F POSTROUTING
 
 # interfaces
 source "${rep_config}/zones_def.conf"
+source "${rep_config}/zones_def.dev"
 # port routage
 source "${rep_config}/ports_routage.conf"
 # acces externe
@@ -84,13 +86,23 @@ iptables -A INPUT -m state --state INVALID -j DROP
 #iptables -A INPUT -p icmp ! -s {$zone1_network} -j DROP
 
 ##Pour permettre à une connexion déjà ouverte de recevoir du trafic
-
-iptables -A INPUT  -i "${int1_iface}"  -m state --state ESTABLISHED,RELATED -j ACCEPT
-iptables -A OUTPUT -o "${int1_iface}"  -j ACCEPT
-iptables -A INPUT  -i "${zone1_iface}" -j ACCEPT
-iptables -A OUTPUT -o "${zone1_iface}" -j ACCEPT
-iptables -A INPUT  -i "${zone2_iface}" -j ACCEPT
-iptables -A OUTPUT -o "${zone2_iface}" -j ACCEPT
+echo "####"
+for iface_idx in "${!iface_name[@]}"
+do
+    if [[ "${iface_name[${iface_idx}]}" =~ ^zone ]]
+    then
+        echo "iptables -A INPUT  -i "${iface_name[${iface_idx}]}" -j ACCEPT"
+        iptables -A INPUT  -i "${iface_name[${iface_idx}]}" -j ACCEPT
+        echo "iptables -A OUTPUT -o "${iface_name[${iface_idx}]}" -j ACCEPT"
+        iptables -A OUTPUT -o "${iface_name[${iface_idx}]}" -j ACCEPT
+    elif [[ "${iface_name[${iface_idx}]}" =~ ^int ]]
+    then
+        echo "iptables -A INPUT  -i "${iface_name[${iface_idx}]}"  -m state --state ESTABLISHED,RELATED -j ACCEPT"
+        iptables -A INPUT  -i "${iface_name[${iface_idx}]}"  -m state --state ESTABLISHED,RELATED -j ACCEPT
+        echo "iptables -A OUTPUT -o "${iface_name[${iface_idx}]}"  -j ACCEPT"
+        iptables -A OUTPUT -o "${iface_name[${iface_idx}]}"  -j ACCEPT
+    fi
+done
 
 ## On autorise les ports necessaires a notre configuration serveur :
 echo "######## PARAMATRAGE DES ACCES EXTERNE ########"
@@ -102,19 +114,28 @@ for params in "${!acces_externe[@]}"
     param_proto=`echo "${acces_externe[${params}]}" | cut -d"|" -f2`
     param_nom=`echo "${acces_externe[${params}]}" | cut -d"|" -f1`
     echo "${param_nom} --> iptables -A INPUT  -i \"${int1_iface}\" -s \"${param_source}\" -p \"${param_proto}\" --dport \"${param_port}\" -j ACCEPT"
-    iptables -A INPUT  -i "${int1_iface}" -s "${param_source}" -p "${param_proto}" --dport "${param_port}" -j ACCEPT
+    iptables -A INPUT  -i "${iface_name[${zone_iface["int1"]}]}" -s "${param_source}" -p "${param_proto}" --dport "${param_port}" -j ACCEPT
     done
 echo "###############################################"
-echo
 echo "########## AUTORISATION DES FORWARD ###########"
+for zone_name in "${!zone_iface[@]}"
+do
+    if [[ "$zone_name" =~ ^zone ]]
+    then
+        echo "iptables -A FORWARD -i \"${zone_name}\" -o \"int1\"  -j ACCEPT"
+        iptables -A FORWARD -i ${zone_name} -o int1  -j ACCEPT
+        echo "iptables -A FORWARD -i \"int1\"  -o \"${zone_name}\" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT"
+        iptables -A FORWARD -i int1  -o ${zone_name} -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+    fi
 
+done
 ## autorisation de forward int<-->zone1 pour les liens établies, cette zone est une zone de travail
-iptables -A FORWARD -i "${zone1_iface}" -o "${int1_iface}"  -j ACCEPT
-iptables -A FORWARD -i "${int1_iface}"  -o "${zone1_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+#iptables -A FORWARD -i "${zone1_iface}" -o "${int1_iface}"  -j ACCEPT
+#iptables -A FORWARD -i "${int1_iface}"  -o "${zone1_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
 
 ## autorisation de forward int<-->zone2 pour les liens établies, cette zone est une dmz
-iptables -A FORWARD -i "${zone2_iface}" -o "${int1_iface}"  -j ACCEPT
-iptables -A FORWARD -i "${int1_iface}"  -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
+#iptables -A FORWARD -i "${zone2_iface}" -o "${int1_iface}"  -j ACCEPT
+#iptables -A FORWARD -i "${int1_iface}"  -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
 
 
 ## autorisation de forward zone1-->zone2, pour les liens établies

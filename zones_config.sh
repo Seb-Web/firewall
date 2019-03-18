@@ -42,7 +42,9 @@ clear
 iface_vue
 saisie "Quel est votre choix pour l'interface \033[31minternet\033[0m ? " 'iface_idx' "([1-9]|([1-9][0-9]))$"
 iface_zone[${iface_idx}]="int1"
+zone_iface["int1"]="${iface_idx}"
 iface_name[${iface_idx}]="int1"
+
 saisie 'dhcp ou static : ' "iface_inet[${iface_idx}]" '^(dhcp|static)$'
 if [ "${iface_inet[${iface_idx}]}" == "static" ]
 then
@@ -51,6 +53,7 @@ then
     saisie 'passerelle : ' "iface_gateway["${zone_choix["int1"]}"]" "^${regex_match_address}$"
     saisie 'DNS : ' "iface_dns["${zone_choix["int1"]}"]" "${regex_match_address}$"
 fi
+
 
 for (( zone_idx=1 ; zone_idx <= ${zone_nb} ; zone_idx++ ))
 do
@@ -65,6 +68,7 @@ do
         if [ "${iface_zone["${iface_idx}"]}" == "" ]
         then
             iface_zone["${iface_idx}"]="zone${zone_idx}"
+            zone_iface["zone${zone_idx}"]="${iface_idx}"
             iface_name["${iface_idx}"]="zone${zone_idx}"
             iface_inet["${iface_idx}"]="static"
             saisie 'réseau : ' "iface_network["${iface_idx}"]" "^${regex_match_address}/${regex_match_network}$"
@@ -128,18 +132,26 @@ function zones_def_config()
 ####/deprecated
 echo > "${rep_config}/zones_def${extention}"
 echo "declare -A iface_name" >> "${rep_config}/zones_def${extention}"
+echo "declare -A iface_mac" >> "${rep_config}/zones_def${extention}"
 echo "declare -A iface_zone" >> "${rep_config}/zones_def${extention}"
 echo "declare -A iface_inet" >> "${rep_config}/zones_def${extention}"
 echo "declare -A iface_network" >> "${rep_config}/zones_def${extention}"
 echo "declare -A iface_address" >> "${rep_config}/zones_def${extention}"
+echo "declare -A zone_iface" >> "${rep_config}/zones_def${extention}"
 for iface_idx in "${!iface_name[@]}"
 do
     echo "iface_name[${iface_idx}]=\"${iface_name[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
+    echo "iface_mac[${iface_idx}]=\"${iface_mac[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
     echo "iface_zone[${iface_idx}]=\"${iface_zone[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
     echo "iface_inet[${iface_idx}]=\"${iface_inet[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
     echo "iface_network[${iface_idx}]=\"${iface_network[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
     echo "iface_address[${iface_idx}]=\"${iface_address[${iface_idx}]}\"" >> "${rep_config}/zones_def${extention}"
 done
+for iface_idx in "${!iface_zone[@]}" 
+do
+    echo "zone_iface[\"${iface_zone[${iface_idx}]}\"]=\"${iface_idx}\"" >> "${rep_config}/zones_def${extention}"
+done
+
 }
 function udev_config()
 {
