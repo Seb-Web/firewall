@@ -137,11 +137,21 @@ done
 #iptables -A FORWARD -i "${zone2_iface}" -o "${int1_iface}"  -j ACCEPT
 #iptables -A FORWARD -i "${int1_iface}"  -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED     -j ACCEPT
 
+for zone_name in "${!zone_iface[@]}"
+do
+    if [[ ! "$zone_name" =~ ^int ]] && [ ! "$zone_name" == "zone1" ]
+    then
+        echo "iptables -A FORWARD -i \"zone1\" -o \"${zone_name}\" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT"
+        iptables -A FORWARD -i "zone1" -o "${zone_name}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+        echo "iptables -A FORWARD -i \"${zone_name}\" -o \"zone1\" -m state --state ESTABLISHED,RELATED -j ACCEPT"
+        iptables -A FORWARD -i "${zone_name}" -o "zone1" -m state --state ESTABLISHED,RELATED -j ACCEPT
+    fi
+done
 
 ## autorisation de forward zone1-->zone2, pour les liens établies
 # tout ce qui vient de la zone1 en direction de la zone2 est accepter
-iptables -A FORWARD -i "${zone1_iface}" -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
-iptables -A FORWARD -i "${zone2_iface}" -o "${zone1_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+#iptables -A FORWARD -i "${zone1_iface}" -o "${zone2_iface}" -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+#iptables -A FORWARD -i "${zone2_iface}" -o "${zone1_iface}" -m state --state ESTABLISHED,RELATED -j ACCEPT
 echo "###############################################"
 echo
 ## Mise en place du masquerade
